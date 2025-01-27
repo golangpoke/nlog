@@ -2,7 +2,7 @@ package nlog
 
 import (
 	"fmt"
-	"nlog/console"
+	"github.com/golangpoke/nlog/console"
 )
 
 func toJsonString(args ...string) (s string) {

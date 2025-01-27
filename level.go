@@ -1,27 +1,27 @@
 package nlog
 
-import "nlog/console"
+import "github.com/golangpoke/nlog/console"
 
 const (
-	LvlDebug Level = iota
+	LvlDebug Level = iota + 1
 	LvlInfo
 	LvlWarn
 	LvlError
 	LvlPanic
 )
 
-func mapLevelMessage(level Level) (string, string) {
+func mapLevelMessage(level Level) string {
 	switch level {
 	case LvlDebug:
-		return "debug", console.TxMagenta("[DEBU]")
+		return console.TxMagenta("[DEBU]")
 	case LvlInfo:
-		return "info", console.TxGreen("[INFO]")
+		return console.TxGreen("[INFO]")
 	case LvlWarn:
-		return "warning", console.TxYellow("[WARN]")
+		return console.TxYellow("[WARN]")
 	case LvlError:
-		return "error", console.TxRed("[ERRO]")
+		return console.TxRed("[ERRO]")
 	case LvlPanic:
-		return "panic", console.HlRed("[PANIC]")
+		return console.HlRed("[PANIC]")
 	}
-	return "", ""
+	return ""
 }

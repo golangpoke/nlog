@@ -2,10 +2,11 @@ package nlog
 
 import (
 	"fmt"
-	"nlog/console"
+	"github.com/golangpoke/nlog/console"
 	"path/filepath"
 	"runtime"
 	"strings"
+	"sync/atomic"
 	"time"
 )
 
@@ -14,61 +15,70 @@ type Level int
 type Logger struct {
 	Level      Level
 	TimeFormat string
-	AddSource  bool
+	out        string
 }
 
-func defaultLogger() *Logger {
-	return &Logger{
+var defaultLogger atomic.Pointer[Logger]
+
+func init() {
+	defaultLogger.Store(&Logger{
 		Level:      LvlDebug,
 		TimeFormat: "2006-01-02 15:04:05",
-		AddSource:  true,
-	}
+	})
+}
+
+func newLogger() *Logger {
+	return defaultLogger.Load()
 }
 
 func SetLogger(logger *Logger) *Logger {
-	if logger.Level != defaultLogger().Level {
-		defaultLogger().Level = logger.Level
+	if logger.Level != 0 {
+		newLogger().Level = logger.Level
 	}
-	if logger.TimeFormat != defaultLogger().TimeFormat {
-		defaultLogger().TimeFormat = logger.TimeFormat
+	if logger.TimeFormat != "" {
+		newLogger().TimeFormat = logger.TimeFormat
 	}
 	return logger
 }
 
-func (l *Logger) output(level Level, msg string, args ...any) string {
+func (l *Logger) output(level Level, msg string, args ...any) *Logger {
+	if level < l.Level {
+		return l
+	}
 	tm := time.Now().Format(l.TimeFormat)
 	tmc := console.TxWhite(tm)
-	lv, lvm := mapLevelMessage(level)
+	lv := mapLevelMessage(level)
 	ms := fmt.Sprintf(msg, args...)
-	msc := console.TxCyan(ms)
-	fn, ln, fc := caller(3)
-	mp := toJsonString(
-		"time", tm,
-		"level", lv,
-		"message", ms,
-		"source", fmt.Sprintf("%s:%d %s", fn, ln, fc),
-	)
-	return strings.Join([]string{tmc, lvm, msc, mp}, " ")
+	fn, ln := caller(3)
+	l.out = strings.Join([]string{tmc, lv, ms, fmt.Sprintf("%s:%d", fn, ln)}, " ")
+	return l
+}
+
+func (l *Logger) print() {
+	if l.out == "" {
+		return
+	}
+	fmt.Println(l.out)
 }
 
 func DEBUf(msg string, args ...any) {
-	fmt.Println(defaultLogger().output(LvlDebug, msg, args...))
+	newLogger().output(LvlDebug, msg, args...).print()
 }
 
 func INFOf(msg string, args ...any) {
-	fmt.Println(defaultLogger().output(LvlInfo, msg, args...))
+	newLogger().output(LvlInfo, msg, args...).print()
 }
 
 func WARNf(msg string, args ...any) {
-	fmt.Println(defaultLogger().output(LvlWarn, msg, args...))
+	newLogger().output(LvlWarn, msg, args...).print()
 }
 
 func ERROf(msg string, args ...any) {
-	fmt.Println(defaultLogger().output(LvlError, msg, args...))
+	newLogger().output(LvlError, msg, args...).print()
 }
 
 func PANICf(msg string, args ...any) {
-	panic(defaultLogger().output(LvlPanic, msg, args...))
+	panic(newLogger().output(LvlPanic, msg, args...).out)
 }
 
 func Recovery() {
@@ -77,9 +87,8 @@ func Recovery() {
 	}
 }
 
-func caller(skip int) (fileName string, line int, funcName string) {
-	pc, file, line, _ := runtime.Caller(skip)
-	funcName = runtime.FuncForPC(pc).Name()
+func caller(skip int) (fileName string, line int) {
+	_, file, line, _ := runtime.Caller(skip)
 	fileName = filepath.Base(file)
-	return fileName, line, funcName
+	return fileName, line
 }
