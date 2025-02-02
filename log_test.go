@@ -7,14 +7,21 @@ import (
 )
 
 func TestLogger(t *testing.T) {
+	nlog.Use()
 	defer nlog.Recovery()
-	nlog.SetLogger(&nlog.Logger{
-		Level: nlog.LvlWarn,
-	})
-	nlog.DEBUf("this is %s %d log", "debug", 1)
-	nlog.INFOf("this is %s %d log", "info", 2)
-	nlog.WARNf("this is %s %d log", "warn", 3)
-	nlog.ERROf("this is %s %d log", "err", 4)
-	nlog.PANICf("this is %s %d log", "panic", 5)
+	nlog.DEBUf("%s log", "debug")
+	nlog.INFOf("%s log", "info")
+	CallTest()
+	nlog.WARNf("%s log", "warn")
+	nlog.ERROf("%s log", "err")
+	nlog.PANICf("%s log", "panic")
 	log.Println(123)
+}
+
+func CallTest() {
+	msg := "call log"
+	nlog.Skip(1).DEBUf(msg)
+	nlog.Skip(1).INFOf(msg)
+	nlog.Skip(1).WARNf(msg)
+	nlog.Skip(1).ERROf(msg)
 }
