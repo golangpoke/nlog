@@ -32,7 +32,7 @@ type logHandler struct {
 	timeFormat string
 }
 
-func Use() {
+func SetDefault() {
 	slog.SetDefault(slog.New(&logHandler{
 		level:      LvlInfo.Level(),
 		handler:    slog.NewTextHandler(os.Stdout, nil),

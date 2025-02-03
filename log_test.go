@@ -7,7 +7,7 @@ import (
 )
 
 func TestLogger(t *testing.T) {
-	nlog.Use()
+	nlog.SetDefault()
 	defer nlog.Recovery()
 	nlog.DEBUf("%s log", "debug")
 	nlog.INFOf("%s log", "info")
