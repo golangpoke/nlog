@@ -11,28 +11,16 @@ type optionLogger struct {
 	addSource bool
 }
 
-type option func(ol *optionLogger)
-
-func Option(option ...option) *optionLogger {
-	ol := &optionLogger{
-		skip:      0,
+func Skip(skip int) *optionLogger {
+	return &optionLogger{
+		skip:      skip,
 		addSource: true,
 	}
-	for _, o := range option {
-		o(ol)
-	}
-	return ol
 }
 
-func Skip(skip int) option {
-	return func(ol *optionLogger) {
-		ol.skip = skip
-	}
-}
-
-func NoSource() option {
-	return func(ol *optionLogger) {
-		ol.addSource = false
+func NoSource() *optionLogger {
+	return &optionLogger{
+		addSource: false,
 	}
 }
 

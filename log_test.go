@@ -27,7 +27,7 @@ func TestError(t *testing.T) {
 	if err != nil {
 		nlog.ERROf(err.Error())
 	}
-	nlog.Option(nlog.NoSource()).ERROf("err:%v", err)
+	nlog.NoSource().ERROf("err:%v", err)
 	if errors.Is(err, os.ErrNotExist) {
 		nlog.INFOf("same error")
 	}
@@ -43,10 +43,6 @@ func ErrorTest() error {
 
 func CallTest() {
 	msg := "log"
-	nlog.Option(
-		nlog.Skip(1),
-	).INFOf("%s %s", "option", msg)
-	nlog.Option(
-		nlog.NoSource(),
-	).WARNf("%s %s", "option", msg)
+	nlog.Skip(1).INFOf("%s %s", "option", msg)
+	nlog.NoSource().WARNf("%s %s", "option", msg)
 }
