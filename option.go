@@ -59,7 +59,7 @@ func (ol *optionLogger) PANICf(msg string, args ...interface{}) {
 func optionLog(ol *optionLogger, level Level, msg string, args ...any) {
 	msg = fmt.Sprintf(msg, args...)
 	if ol.addSource {
-		fn, ln := caller(ol.skip)
+		fn, ln := caller(ol.skip + 2)
 		msg = fmt.Sprintf("%s %s:%d", msg, fn, ln)
 	}
 	slog.Default().Log(context.Background(), level.Level(), msg)

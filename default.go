@@ -103,13 +103,13 @@ func Recovery() {
 
 func defaultLog(level Level, msg string, args ...any) {
 	msg = fmt.Sprintf(msg, args...)
-	fn, ln := caller(0)
+	fn, ln := caller(2)
 	msg = fmt.Sprintf("%s %s:%d", msg, fn, ln)
 	slog.Default().Log(context.Background(), level.Level(), msg)
 }
 
 func caller(skip int) (fileName string, line int) {
-	_, file, line, _ := runtime.Caller(skip + 3)
+	_, file, line, _ := runtime.Caller(skip + 1)
 	fileName = filepath.Base(file)
 	return fileName, line
 }
