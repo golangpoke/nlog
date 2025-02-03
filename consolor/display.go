@@ -1,4 +1,4 @@
-package console
+package consolor
 
 import "fmt"
 

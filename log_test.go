@@ -19,9 +19,11 @@ func TestLogger(t *testing.T) {
 }
 
 func CallTest() {
-	msg := "call log"
-	nlog.Skip(1).DEBUf(msg)
-	nlog.Skip(1).INFOf(msg)
-	nlog.Skip(1).WARNf(msg)
-	nlog.Skip(1).ERROf(msg)
+	msg := "log"
+	nlog.Option(
+		nlog.Skip(1),
+	).INFOf("%s %s", "option", msg)
+	nlog.Option(
+		nlog.NoSource(),
+	).WARNf("%s %s", "option", msg)
 }

@@ -3,7 +3,7 @@ package nlog
 import (
 	"context"
 	"fmt"
-	"github.com/golangpoke/nlog/console"
+	"github.com/golangpoke/nlog/consolor"
 	"log"
 	"log/slog"
 	"os"
@@ -43,19 +43,19 @@ func Use() {
 
 func (lh *logHandler) Handle(ctx context.Context, record slog.Record) error {
 	tm := record.Time.Format(lh.timeFormat)
-	tm = console.TxWhite(tm)
+	tm = consolor.TxWhite(tm)
 	lv := ""
 	switch record.Level {
 	case LvlDebug.Level():
-		lv = console.TxMagenta("[DEBU]")
+		lv = consolor.TxMagenta("[DEBU]")
 	case LvlInfo.Level():
-		lv = console.TxGreen("[INFO]")
+		lv = consolor.TxGreen("[INFO]")
 	case LvlWarn.Level():
-		lv = console.TxYellow("[WARN]")
+		lv = consolor.TxYellow("[WARN]")
 	case LvlError.Level():
-		lv = console.TxRed("[ERRO]")
+		lv = consolor.TxRed("[ERRO]")
 	case LvlPanic.Level():
-		lv = console.HlRed("[PANIC]")
+		lv = consolor.HlRed("[PANIC]")
 		panic(fmt.Sprintf("%s %s %s", tm, lv, record.Message))
 		return nil
 	}
