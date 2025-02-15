@@ -4,10 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/golangpoke/nlog/consolor"
-	"log"
 	"log/slog"
-	"os"
-	"path/filepath"
 	"runtime"
 )
 
@@ -18,33 +15,55 @@ func (l Level) Level() slog.Level {
 }
 
 const (
-	LvlDebug Level = iota + 1
-	LvlInfo
-	LvlWarn
-	LvlError
-	LvlPanic
+	LvlDebug Level = -4
+	LvlInfo  Level = 0
+	LvlWarn  Level = 4
+	LvlError Level = 8
+	LvlPanic Level = 12
 )
 
 type logHandler struct {
 	level      slog.Level
-	handler    slog.Handler
-	logger     *log.Logger
 	timeFormat string
 }
 
-func SetDefault() {
-	slog.SetDefault(slog.New(&logHandler{
-		level:      LvlInfo.Level(),
-		handler:    slog.NewTextHandler(os.Stdout, nil),
-		logger:     log.New(os.Stdout, "", 0),
+func (lh *logHandler) Enabled(ctx context.Context, level slog.Level) bool {
+	return level >= lh.level
+}
+
+func (lh *logHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
+	return lh
+}
+
+func (lh *logHandler) WithGroup(name string) slog.Handler {
+	return lh
+}
+
+func SetDefault(level Level) {
+	slog.SetDefault(slog.New(Default(level)))
+}
+
+func Default(level Level) *logHandler {
+	return &logHandler{
+		level:      level.Level(),
 		timeFormat: "2006-01-02 15:04:05",
-	}))
+	}
 }
 
 func (lh *logHandler) Handle(ctx context.Context, record slog.Record) error {
 	tm := record.Time.Format(lh.timeFormat)
 	tm = consolor.TxWhite(tm)
 	lv := ""
+	curStack := ""
+	record.Attrs(func(attr slog.Attr) bool {
+		if attr.Key == FileNameKey {
+			curStack += fmt.Sprintf("%s", attr.Value)
+		}
+		if attr.Key == LineNumberKey {
+			curStack += fmt.Sprintf(":%s", attr.Value)
+		}
+		return true
+	})
 	switch record.Level {
 	case LvlDebug.Level():
 		lv = consolor.TxMagenta("[DEBU]")
@@ -55,44 +74,34 @@ func (lh *logHandler) Handle(ctx context.Context, record slog.Record) error {
 	case LvlError.Level():
 		lv = consolor.TxRed("[ERRO]")
 	case LvlPanic.Level():
-		lv = consolor.HlRed("[PANIC]")
-		panic(fmt.Sprintf("%s %s %s", tm, lv, record.Message))
-		return nil
+		lv = consolor.HlRed("[PANI]")
 	}
-	lh.logger.Println(tm, lv, record.Message)
+	s := fmt.Sprintf("%s %s %s %s\n\n", tm, curStack, lv, record.Message)
+	if record.Level == LvlPanic.Level() {
+		panic(s)
+	}
+	fmt.Print(s)
 	return nil
 }
 
-func (lh *logHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
-	return lh.handler.WithAttrs(attrs)
-}
-
-func (lh *logHandler) WithGroup(name string) slog.Handler {
-	return lh.handler.WithGroup(name)
-}
-
-func (lh *logHandler) Enabled(ctx context.Context, level slog.Level) bool {
-	return lh.level <= level
-}
-
 func DEBUf(msg string, args ...any) {
-	defaultLog(LvlDebug, msg, args...)
+	defaultLogWithStack(LvlDebug, msg, args...)
 }
 
 func INFOf(msg string, args ...any) {
-	defaultLog(LvlInfo, msg, args...)
+	defaultLogWithStack(LvlInfo, msg, args...)
 }
 
 func WARNf(msg string, args ...any) {
-	defaultLog(LvlWarn, msg, args...)
+	defaultLogWithStack(LvlWarn, msg, args...)
 }
 
 func ERROf(msg string, args ...any) {
-	defaultLog(LvlError, msg, args...)
+	defaultLogWithStack(LvlError, msg, args...)
 }
 
 func PANICf(msg string, args ...any) {
-	defaultLog(LvlPanic, msg, args...)
+	defaultLogWithStack(LvlPanic, msg, args...)
 }
 
 func Recovery() {
@@ -101,15 +110,22 @@ func Recovery() {
 	}
 }
 
-func defaultLog(level Level, msg string, args ...any) {
-	msg = fmt.Sprintf(msg, args...)
+const (
+	FileNameKey   = "fileName"
+	LineNumberKey = "lineNumber"
+	ErrorKey      = "error"
+)
+
+func defaultLogWithStack(level Level, msg string, args ...any) {
 	fn, ln := caller(2)
-	msg = fmt.Sprintf("%s %s:%d", msg, fn, ln)
-	slog.Default().Log(context.Background(), level.Level(), msg)
+	msg = fmt.Sprintf(msg, args...)
+	slog.Default().LogAttrs(context.Background(), level.Level(), msg,
+		slog.String(FileNameKey, fn),
+		slog.Int(LineNumberKey, ln),
+	)
 }
 
-func caller(skip int) (fileName string, line int) {
+func caller(skip int) (string, int) {
 	_, file, line, _ := runtime.Caller(skip + 1)
-	fileName = filepath.Base(file)
-	return fileName, line
+	return file, line
 }

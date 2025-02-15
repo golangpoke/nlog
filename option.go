@@ -7,20 +7,19 @@ import (
 )
 
 type optionLogger struct {
-	skip      int
-	addSource bool
+	skip     int
+	noSource bool
 }
 
 func Skip(skip int) *optionLogger {
 	return &optionLogger{
-		skip:      skip,
-		addSource: true,
+		skip: skip,
 	}
 }
 
 func NoSource() *optionLogger {
 	return &optionLogger{
-		addSource: false,
+		noSource: true,
 	}
 }
 
@@ -46,7 +45,7 @@ func (ol *optionLogger) PANICf(msg string, args ...interface{}) {
 
 func optionLog(ol *optionLogger, level Level, msg string, args ...any) {
 	msg = fmt.Sprintf(msg, args...)
-	if ol.addSource {
+	if !ol.noSource {
 		fn, ln := caller(ol.skip + 2)
 		msg = fmt.Sprintf("%s %s:%d", msg, fn, ln)
 	}
